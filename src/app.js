@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(
 app.use(express.json({ limit: '16kb' })); // To accept json data in express app
 app.use(express.urlencoded({ extended: true, limit: '16kb' })); // To accept data in request url
 app.use(express.static('/public/temp')); // To serve the static assets from public folder
+app.use(cookieParser()); //To work with cookies
 
 //Router imports
 import UserRouter from './routes/user.route.js';
