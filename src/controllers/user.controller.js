@@ -4,15 +4,22 @@ import { User } from '../modals/user.modal.js';
 import { uploadOnCloudinary } from '../utils/cloudinary.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 
-const generateAccessAndRefreshToken = user => {
-	const accessToken = user.generateAccessToken();
-	const refreshToken = user.generateRefreshToken();
-	user.refreshToken = refreshToken;
-	user.save({ validateBeforeSave: false });
-	return {
-		accessToken,
-		refreshToken,
-	};
+const generateAccessAndRefreshToken = async user => {
+	try {
+		const accessToken = await user.generateAccessToken();
+		const refreshToken = await user.generateRefreshToken();
+		user.refreshToken = refreshToken;
+		await user.save({ validateBeforeSave: false });
+		return {
+			accessToken,
+			refreshToken,
+		};
+	} catch (error) {
+		throw new ApiErrors(
+			500,
+			'Something went wrong while generate accessToken and refreshToken'
+		);
+	}
 };
 
 export const registerUser = asyncHandler(async (req, res, next) => {
@@ -94,7 +101,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
 	const user = await User.findOne({
 		$or: [{ email }, { username }],
-	}).select('-password -refreshToken');
+	});
 
 	if (!user) {
 		throw new ApiErrors(404, 'User does not exists');
@@ -104,11 +111,14 @@ export const loginUser = asyncHandler(async (req, res) => {
 	if (!isPasswordCorrect) {
 		throw new ApiErrors(401, 'Invalid user credentials');
 	}
-	const { accessToken, refreshToken } = generateAccessAndRefreshToken(user);
+	const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user);
 	const cookieOptions = {
 		httpOnly: true,
 		secure: true,
 	};
+	const data = user.toObject();
+	delete data.password;
+	delete data.refreshToken;
 	return res
 		.status(200)
 		.cookie('accessToken', accessToken, cookieOptions)
@@ -116,7 +126,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 		.json(
 			new ApiResponse(
 				200,
-				{ user, accessToken, refreshToken },
+				{ data, accessToken, refreshToken },
 				'User logged in successfully'
 			)
 		);
@@ -126,7 +136,7 @@ export const logoutUser = asyncHandler(async (req, res) => {
 	await User.findByIdAndUpdate(
 		req?.user?._id,
 		{
-			$set: { refreshToken: undefined },
+			$unset: { refreshToken: 1 },
 		},
 		{ new: true }
 	);

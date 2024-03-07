@@ -2,11 +2,11 @@ import { User } from '../modals/user.modal.js';
 import { ApiErrors } from '../utils/apiErrors.js';
 import jwt from 'jsonwebtoken';
 
-export const verifyJWT = async (req, res, next) => {
+export const verifyJWT = async (req, _, next) => {
 	try {
 		const token =
-			req.cookie?.accessToken ||
-			req.header('Authorization').replace('Bearer ', '');
+			req.cookies?.accessToken ||
+			req?.header('Authorization')?.replace('Bearer ', '');
 		if (!token) {
 			throw new ApiErrors(401, 'Unauthorized request');
 		}
