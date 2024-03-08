@@ -116,7 +116,8 @@ export const loginUser = asyncHandler(async (req, res) => {
 		await generateAccessAndRefreshToken(user);
 	const cookieOptions = {
 		httpOnly: true,
-		secure: true,
+		// secure: true,
+		secure: false,
 	};
 	const data = user.toObject();
 	delete data.password;
@@ -144,7 +145,8 @@ export const logoutUser = asyncHandler(async (req, res) => {
 	);
 	const cookieOptions = {
 		httpOnly: true,
-		secure: true,
+		// secure: true,
+		secure: false,
 	};
 	res
 		.status(200)
@@ -165,9 +167,6 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 		incomingRefreshToken,
 		process.env.REFRESH_TOKEN_SECRET
 	);
-	if (!decodedToken) {
-		throw new ApiErrors(401, 'Invalid access token');
-	}
 	const user = await User.findById(decodedToken?._id);
 	if (!user) {
 		throw new ApiErrors(401, 'Invalid access token');
@@ -178,7 +177,8 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
 	const cookieOptions = {
 		httpOnly: true,
-		secure: true,
+		// secure: true,
+		secure: false,
 	};
 
 	return res
