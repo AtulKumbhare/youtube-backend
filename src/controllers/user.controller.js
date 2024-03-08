@@ -193,3 +193,78 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 			)
 		);
 });
+
+export const changeCurrentPassword = asyncHandler(async (req, res) => {
+	const { oldPassword, newPassword } = req.body;
+
+	const user = await User.findById(req?.user?._id);
+	const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+	if (!isPasswordCorrect) {
+		throw new ApiErrors(400, 'Incorrect password');
+	}
+	user.password = newPassword;
+	await user.save({ validateBeforeSave: false });
+	res
+		.status(200)
+		.json(new ApiResponse(200, {}, 'Password changed successfully'));
+});
+
+export const getCurrentUser = asyncHandler(async (req, res) => {
+	res
+		.status(200)
+		.json(new ApiResponse(200, req.user, 'LoggedIn user fetched successfully'));
+});
+
+export const updateUserDetails = asyncHandler(async (req, res) => {
+	const { fullName, username, email } = req.body;
+
+	if ([fullName, username, email].every(field => field === '')) {
+		throw new ApiErrors(400, 'At least one field is required');
+	}
+	const user = req.user;
+	user.username = username || user.username;
+	user.email = email || user.email;
+	user.fullName = fullName || user.fullName;
+	const updatedUser = await user.save({ validateBeforeSave: false });
+	//You can use this code as well not much of a difference in operating time
+	// const updatedUser = await User.findByIdAndUpdate(
+	// 	user?._id,
+	// 	{
+	// 		$set: {
+	// 			...(username ? { username } : {}),
+	// 			...(email ? { email } : {}),
+	// 			...(fullName ? { fullName } : {}),
+	// 		},
+	// 	},
+	// 	{ new: true }
+	// ).select('-password -refreshToken');
+	res
+		.status(200)
+		.json(
+			new ApiResponse(200, updatedUser, 'User details updated successfully')
+		);
+});
+
+export const updateAvatarAndCoverImage = asyncHandler(async (req, res) => {
+	const { avatar, coverImage } = req.files; // If we want to upload only one file then we use req.file and while injecting upload multer middleware we use upload.single which takes only single file object
+	const avatarImageLocalPath = avatar?.[0]?.path;
+	const coverImageLocalPath = coverImage?.[0]?.path;
+	if (!avatarImageLocalPath && !coverImageLocalPath) {
+		throw new ApiErrors(400, 'avatarImage or coverImage is required');
+	}
+	const avatarImageCloudinaryUrl = avatarImageLocalPath
+		? (await uploadOnCloudinary(avatarImageLocalPath)).url
+		: '';
+	const coverImageCloudinaryUrl = coverImageLocalPath
+		? (await uploadOnCloudinary(coverImageLocalPath)).url
+		: '';
+	if (!avatarImageCloudinaryUrl && !coverImageCloudinaryUrl) {
+		throw new ApiErrors(500, 'Something went wrong while uploading images');
+	}
+	req.user.avatarImage = avatarImageCloudinaryUrl || req.user.avatarImage;
+	req.user.coverImage = coverImageCloudinaryUrl || req.user.coverImage;
+	const updatedUser = await req.user.save({ validateBeforeSave: false });
+	res
+		.status(200)
+		.json(new ApiResponse(200, updatedUser, 'Images uploaded successfully'));
+});
