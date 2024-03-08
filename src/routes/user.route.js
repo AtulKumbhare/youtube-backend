@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
 	changeCurrentPassword,
+	deleteUser,
 	getCurrentUser,
 	loginUser,
 	logoutUser,
@@ -43,4 +44,5 @@ router.route('/updateAvatarAndCoverImage').post(
 	]),
 	updateAvatarAndCoverImage
 );
+router.route('/deleteUser').post(verifyJWT, deleteUser);
 export default router;

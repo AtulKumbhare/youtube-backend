@@ -268,3 +268,8 @@ export const updateAvatarAndCoverImage = asyncHandler(async (req, res) => {
 		.status(200)
 		.json(new ApiResponse(200, updatedUser, 'Images uploaded successfully'));
 });
+
+export const deleteUser = asyncHandler(async (req, res) => {
+	await User.findByIdAndDelete(req?.user?._id);
+	res.status(200).json(new ApiResponse(200, {}, 'User deleted successfully'));
+});
