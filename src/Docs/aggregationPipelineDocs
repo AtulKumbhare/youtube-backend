@@ -1,0 +1,236 @@
+// 1. Find active users
+[
+  {
+    $match: {
+      isActive: true,
+    },
+  },
+  {
+    $count: "totalActiveUsers",
+  },
+];
+
+//2. Average age of the users
+[
+  {
+    $group: {
+      _id: null,
+      averageAgeOfUsers: {
+        $avg: '$age'
+      }
+    }
+  }
+];
+
+// 3. top 5 common fruits among the users
+[
+  {
+    $group: {
+      _id: '$favoriteFruit',
+      count: {
+        $sum: 1
+      }
+    }
+  },
+  {
+    $sort: {
+      count: -1
+    }
+  },{
+    $limit: 2
+  }
+];
+
+//4. Count number of male and female
+[
+  {
+    $group: {
+      _id: '$gender',
+      total:{
+        $sum: 1,
+      },
+    }
+  }
+];
+
+//5. Which county has the highest number of registered users
+[
+  {
+    $group: {
+      _id: '$company.location.country',
+      registeredUsers: {
+        $sum: 1
+      }
+      
+    }
+  },
+  {
+    $sort: {
+      registeredUsers: -1
+    }
+  },
+  {
+    $limit: 1
+  }
+];
+
+//6. List all unique eye color present in the collection
+[
+  {
+    $group: {
+      _id: '$eyeColor',
+      count: {
+        $sum: 1
+      }
+    }
+  }
+];
+
+// 7. what is average number of tags per user
+//Solution 1
+[
+  {
+    $unwind: {
+      path: '$tags',
+      preserveNullAndEmptyArrays: true
+    }
+  },
+  {
+    $group: {
+      _id: '$name',
+      numberOfTags: {
+        $sum: 1
+      }
+    }
+  },
+  {$group: {
+    _id: null,
+    avgTags: {
+      $avg: '$numberOfTags'
+    }
+  }}
+];
+
+//Solution 2
+[
+  {
+    $addFields: {
+      numberOfTags: {
+        $size: { $ifNull: ["$tags", []] },
+      },
+    },
+  },
+  {
+    $group: {
+      _id: null,
+      avgTags: {
+        $avg: '$numberOfTags'
+      }
+    }
+  }
+];
+
+// 8. How many users have 'enim' as one of their tag
+[
+  {
+    $match: {
+      tags: "sint",
+    },
+  },
+];
+
+// 9. what are the names and ages of the user who are inactive and has velit as a tag
+[
+  {
+    $match: {
+      isActive: false,
+      tags: "velit",
+    },
+  },
+  {
+    $project: {
+      name: 1,
+      age: 1,
+      tags: 1
+    },
+  },
+];
+
+// 10. How many users have a phone number stating with '+1 (940)'
+[
+  {
+    $match: {
+      "company.phone": /^\+1 \(940\)/,
+    },
+  },
+  {
+    $count: "usersCount",
+  },
+];
+
+// 11. Who registered most recently
+[
+  {
+    $sort: {
+      registered: -1,
+    },
+  },
+  {
+    $limit: 5
+  }
+];
+
+// 12.Categorize user by their favorite fruit
+[
+  {
+    $group: {
+      _id: "$favoriteFruit",
+      users: {
+        $push: {name: "$name", eyeColor: "$eyeColor"},
+      },
+    },
+  },
+];
+
+// 13. How many users have 'ad' as 2nd tag in their list of tags
+[
+  {
+    $match: {
+      "tags.1": "ad",
+    },
+  },
+  {
+    $count: "numberOfUsers",
+  },
+];
+
+// 14. Find the users who have enim and id as their tags
+[
+  {
+    $match: {
+      tags: {
+        $all: ['enim', 'id']
+      }
+    },
+  },
+  // {
+  //   $count: "numberOfUsers",
+  // },
+];
+
+//15. List all the companies located in USA with their corresponding user count
+[
+  {
+    $match: {
+      "company.location.country": "USA",
+    },
+  },
+  {
+    $group: {
+      _id: "$company.title",
+      userCount: {
+        $sum: 1,
+      },
+    },
+  },
+]

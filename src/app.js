@@ -17,8 +17,14 @@ app.use(cookieParser()); //To work with cookies
 
 //Router imports
 import UserRouter from './routes/user.route.js';
+import TweetRouter from './routes/tweet.route.js';
+import CommentRouter from './routes/comment.route.js';
+import VideoRouter from './routes/video.route.js';
 
 //Route Declaration
 app.use('/api/v1/users', UserRouter);
+app.use('/api/v1/tweets', TweetRouter);
+app.use('/api/v1/comments', CommentRouter);
+app.use('/api/v1/videos', VideoRouter);
 
 export { app };
