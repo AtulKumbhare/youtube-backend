@@ -1,4 +1,4 @@
-import mongoose, { isValidObjectId } from 'mongoose';
+import mongoose, { Schema, isValidObjectId } from 'mongoose';
 import { Video } from '../modals/video.modal.js';
 import { User } from '../modals/user.modal.js';
 import { ApiErrors } from '../utils/apiErrors.js';
@@ -8,8 +8,30 @@ import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
 export const getAllVideos = asyncHandler(async (req, res) => {
 	const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-  //TODO: get all videos based on query, sort, pagination
-  
+	//TODO: get all videos based on query, sort, pagination
+
+	const user = await User.findById(userId);
+
+	if (!user) {
+		throw new ApiErrors(404, 'User not found');
+	}
+
+	const aggregationResult = await Video.aggregate([
+		{
+			$match: {
+				owner: new mongoose.Types.ObjectId(user?._id),
+			},
+		},
+	]);
+	const videos = await Video.aggregatePaginate(aggregationResult, {
+		page,
+		limit,
+		sort: `${sortType === 'asc' ? '-' : ''}${sortBy}`,
+	});
+
+	res
+		.status(200)
+		.json(new ApiResponse(200, videos, 'Videos fetched successfully'));
 });
 
 export const publishAVideo = asyncHandler(async (req, res) => {

@@ -26,7 +26,9 @@ router.route('/publish').post(
 	]),
 	publishAVideo
 );
-router.route('/update').patch(upload.single('videoThumbnail'), updateVideo);
+router
+	.route('/update/:videoId')
+	.patch(upload.single('videoThumbnail'), updateVideo);
 router.route('/').get(getAllVideos);
 router.route('/:videoId').get(getVideoById).delete(deleteVideo);
 

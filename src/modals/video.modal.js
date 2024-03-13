@@ -32,12 +32,10 @@ const videoSchema = new Schema(
 		thumbnail: {
 			type: String,
 		},
-		owner: [
-			{
-				type: Types.ObjectId,
-				ref: 'User',
-			},
-		],
+		owner: {
+			type: Types.ObjectId,
+			ref: 'User',
+		},
 	},
 	{ timestamps: true }
 );
