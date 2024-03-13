@@ -22,14 +22,14 @@ export const createTweet = asyncHandler(async (req, res) => {
 });
 
 export const updateTweet = asyncHandler(async (req, res) => {
-	const { id, content } = req.body;
+	const { tweetId, content } = req.body;
 
-	if (!id && !content) {
+	if (!tweetId && !content) {
 		throw new ApiErrors(400, 'Tweet id and content is required');
 	}
 
 	const tweet = await Tweet.findByIdAndUpdate(
-		id,
+		tweetId,
 		{
 			content,
 		},
