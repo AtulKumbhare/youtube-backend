@@ -172,3 +172,57 @@ export const togglePublishStatus = asyncHandler(async (req, res) => {
 		.status(200)
 		.json(new ApiResponse(200, updatedVideo, 'Video updated successfully'));
 });
+
+export const setVideoAsViewed = asyncHandler(async (req, res) => {
+	const { videoId } = req.params;
+
+	if (!videoId) {
+		throw new ApiErrors(400, 'videoId is required');
+	}
+
+	if (!isValidObjectId(videoId)) {
+		throw new ApiErrors(400, 'Invalid videoId');
+	}
+
+	const video = await Video.findById(videoId);
+
+	if (!video) {
+		throw new ApiErrors(400, 'Video not found');
+	}
+	let updatedVideo;
+	if (video?.owner !== req.user?._id) {
+		const user = await User.findByIdAndUpdate(
+			req.user?._id,
+			{
+				$addToSet: {
+					watchHistory: videoId,
+				},
+			},
+			{ new: true }
+		);
+
+		if(!user) {
+			throw new ApiErrors(500, 'Something went wrong while updating watch history');
+		}
+
+		if (user?.watchHistory?.length === req.user?.watchHistory?.length) {
+			return res
+				.status(200)
+				.json(new ApiResponse(200, {}, 'Video already viewed'));
+		}
+
+		updatedVideo = await Video.findByIdAndUpdate(
+			videoId,
+			{
+				$set: {
+					views: video.views + 1,
+				},
+			},
+			{ new: true }
+		);
+	}
+
+	res
+		.status(200)
+		.json(new ApiResponse(200, updatedVideo, 'Video views updated successfully'));
+});

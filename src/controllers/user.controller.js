@@ -1,7 +1,7 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiErrors } from '../utils/apiErrors.js';
 import { User } from '../modals/user.modal.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { deleteOnCloudinary, uploadOnCloudinary } from '../utils/cloudinary.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
@@ -103,7 +103,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
 	const user = await User.findOne({
 		$or: [{ email }, { username }],
-	});
+	}).populate('watchHistory');
 
 	if (!user) {
 		throw new ApiErrors(404, 'User does not exists');
@@ -211,9 +211,13 @@ export const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
+	const user = await User.findById(req?.user?._id).populate('watchHistory').select('-password -refreshToken');
+	if (!user) {
+		throw new ApiErrors(404, 'User not found');
+	}
 	res
 		.status(200)
-		.json(new ApiResponse(200, req.user, 'LoggedIn user fetched successfully'));
+		.json(new ApiResponse(200, user, 'LoggedIn user fetched successfully'));
 });
 
 export const updateUserDetails = asyncHandler(async (req, res) => {
@@ -262,6 +266,9 @@ export const updateAvatarAndCoverImage = asyncHandler(async (req, res) => {
 	if (!avatarImageCloudinaryUrl && !coverImageCloudinaryUrl) {
 		throw new ApiErrors(500, 'Something went wrong while uploading images');
 	}
+
+	if (avatarImageCloudinaryUrl) await deleteOnCloudinary(req.user?.avatar);
+	if (coverImageCloudinaryUrl) await deleteOnCloudinary(req.user?.coverImage);
 	req.user.avatarImage = avatarImageCloudinaryUrl || req.user.avatarImage;
 	req.user.coverImage = coverImageCloudinaryUrl || req.user.coverImage;
 	const updatedUser = await req.user.save({ validateBeforeSave: false });
@@ -371,7 +378,7 @@ export const getWatchHistory = asyncHandler(async (req, res) => {
 									$project: {
 										username: 1,
 										email: 1,
-										fullName,
+										fullName: 1,
 										avatar: 1,
 									},
 								},
@@ -381,7 +388,7 @@ export const getWatchHistory = asyncHandler(async (req, res) => {
 					{
 						$addFields: {
 							owner: {
-								first: '$owner',
+								$first: '$owner',
 							},
 						},
 					},

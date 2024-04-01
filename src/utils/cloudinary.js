@@ -21,3 +21,22 @@ export const uploadOnCloudinary = async localFilePath => {
 		return null;
 	}
 };
+
+const getPublicIdFromUrl = url => {
+	const splittedUrl = url.split('/');
+	const publicId = splittedUrl[splittedUrl.length - 1].split('.')[0];
+	return publicId;
+};
+
+export const deleteOnCloudinary = async (url, resource_type) => {
+	const public_id = getPublicIdFromUrl(url);
+	if (!public_id) return null;
+	try {
+		return await cloudinary.uploader.destroy(public_id, {
+			resource_type,
+		});
+	} catch (error) {
+		console.log(error);
+		return null;
+	}
+};
